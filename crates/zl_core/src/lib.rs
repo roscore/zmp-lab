@@ -282,12 +282,13 @@ pub fn simulate(p: &Params, feet: Vec<Foot>, push: Option<Push>) -> Sim {
     let mut report: Option<PushReport> = None;
     let (mut pushed, mut fallen) = (false, false);
     let mut seg = 0;
+    let mut poly = plan.polygon(0);
     for i in 0..=(end / DT).round() as usize {
         let t = i as f64 * DT;
         while seg + 1 < plan.segs.len() && plan.segs[seg + 1].t0 <= t + 1e-12 {
             seg += 1;
+            poly = plan.polygon(seg);
         }
-        let poly = plan.polygon(seg);
         if let Some(pu) = push.filter(|pu| !pushed && t >= pu.t - 1e-12) {
             pushed = true;
             let d = pu.dir();
@@ -308,6 +309,8 @@ pub fn simulate(p: &Params, feet: Vec<Foot>, push: Option<Push>) -> Sim {
         let xi = capture_point(x, v, w);
         if !fallen && pushed && signed_dist(&poly, xi) < -FALL_DIST {
             fallen = true;
+            // The polygon could not hold the capture point: counts as saturation.
+            saturated = true;
             v = [0.0; 2];
             if let Some(r) = report.as_mut() {
                 r.fell_at = Some(t);
@@ -453,7 +456,8 @@ mod tests {
         assert!(small.dv_max > 0.05);
         let big = simulate(&p, footsteps(&p), Some(Push { t: 0.3, dv: 1.5, angle_deg: 90.0 })).push.unwrap();
         assert!(big.step_needed && big.cp_margin < 0.0, "{big:?}");
-        assert!(big.fell_at.is_some());
+        let sim = simulate(&p, footsteps(&p), Some(Push { t: 0.3, dv: 1.5, angle_deg: 90.0 }));
+        assert!(sim.saturated && sim.push.unwrap().fell_at.is_some());
         assert!(big.dv_max < 1.5);
         // Nearly at rest, both bounds agree.
         close(big.dv_max, big.dv_max_cp, 0.02);

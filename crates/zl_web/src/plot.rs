@@ -66,8 +66,8 @@ pub fn draw(canvas: &HtmlCanvasElement, title: &str, dt: f64, series: &[Series],
     }
     c.stroke();
     let _ = c.fill_text(title, x0, 14.0);
-
-    let mut lx = x0 + 90.0;
+    let mut lx = x0 + 12.0 + c.measure_text(title).map(|m| m.width()).unwrap_or(90.0);
+    c.set_font("10px system-ui, sans-serif");
     for s in series {
         c.set_stroke_style_str(s.color);
         c.set_line_width(if s.dashed { 1.0 } else { 1.6 });
@@ -92,7 +92,7 @@ pub fn draw(canvas: &HtmlCanvasElement, title: &str, dt: f64, series: &[Series],
         c.line_to(lx + 14.0, 10.0);
         c.stroke();
         let _ = c.fill_text(s.name, lx + 18.0, 14.0);
-        lx += 26.0 + c.measure_text(s.name).map(|m| m.width()).unwrap_or(40.0);
+        lx += 24.0 + c.measure_text(s.name).map(|m| m.width()).unwrap_or(40.0);
     }
     let _ = c.set_line_dash(&js_sys::Array::new());
     c.set_stroke_style_str(fg);

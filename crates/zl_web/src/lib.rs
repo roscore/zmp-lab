@@ -149,6 +149,9 @@ impl App {
     fn set_params(&mut self, p: Params, preset: bool) {
         self.p = p;
         self.feet = footsteps(&p);
+        if preset {
+            self.push = None;
+        }
         self.edited = false;
         if preset {
             self.write_inputs();
@@ -331,7 +334,7 @@ pub fn start() {
         });
     }
     click(&app, "push", |a| {
-        let push = Push { t: a.num("pt", 0.0, 60.0, 1.0), dv: a.num("pdv", 0.0, 10.0, 0.2), angle_deg: a.num("pang", -360.0, 360.0, 90.0) };
+        let push = Push { t: a.num("pt", 0.0, a.sim.plan.duration(), 1.0), dv: a.num("pdv", 0.0, 10.0, 0.2), angle_deg: a.num("pang", -360.0, 360.0, 90.0) };
         a.push = Some(push);
         a.resim(false);
         a.t = (push.t - 0.4).max(0.0);
