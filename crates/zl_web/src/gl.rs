@@ -370,7 +370,7 @@ impl Renderer {
         // Push the ground back so overlays and shadows lying on y = 0 win the depth test.
         gl.enable(GL::POLYGON_OFFSET_FILL);
         gl.polygon_offset(2.0, 2.0);
-        self.raw(&self.plane);
+        self.raw(&self.plane, self.plane.count);
         gl.disable(GL::POLYGON_OFFSET_FILL);
 
         gl.use_program(Some(&self.lit));
@@ -397,7 +397,16 @@ impl Renderer {
         gl.disable(GL::STENCIL_TEST);
     }
 
+    /// Like `draw`, but only the first `n` vertices (indices if indexed), e.g. a trail growing over time.
+    pub fn draw_first(&self, m: &Mesh, model: &M4, p: Paint, n: i32) {
+        self.draw_n(m, model, &math::IDENTITY, p, n.clamp(0, m.count));
+    }
+
     fn draw_post(&self, m: &Mesh, model: &M4, post: &M4, p: Paint) {
+        self.draw_n(m, model, post, p, m.count);
+    }
+
+    fn draw_n(&self, m: &Mesh, model: &M4, post: &M4, p: Paint, n: i32) {
         let (gl, prog) = (&self.gl, &self.lit);
         self.u_m4(prog, "u_model", model);
         self.u_m4(prog, "u_post", post);
@@ -406,16 +415,16 @@ impl Renderer {
         gl.uniform1f(gl.get_uniform_location(prog, "u_glow").as_ref(), p.glow);
         gl.uniform1f(gl.get_uniform_location(prog, "u_clip").as_ref(), p.clip);
         gl.depth_mask(p.color[3] >= 1.0);
-        self.raw(m);
+        self.raw(m, n);
         gl.depth_mask(true);
     }
 
-    fn raw(&self, m: &Mesh) {
+    fn raw(&self, m: &Mesh, n: i32) {
         self.gl.bind_vertex_array(Some(&m.vao));
         if m.indexed {
-            self.gl.draw_elements_with_i32(m.mode, m.count, GL::UNSIGNED_SHORT, 0);
+            self.gl.draw_elements_with_i32(m.mode, n, GL::UNSIGNED_SHORT, 0);
         } else {
-            self.gl.draw_arrays(m.mode, 0, m.count);
+            self.gl.draw_arrays(m.mode, 0, n);
         }
     }
 

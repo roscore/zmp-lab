@@ -1,0 +1,8 @@
+[package]
+name = "zl_core"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "LIPM / ZMP / capture-point gait model (pure Rust, no dependencies)"
+
+[dependencies]
